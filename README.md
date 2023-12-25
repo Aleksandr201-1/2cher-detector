@@ -1,1 +1,1 @@
-# 2cher-detector
+# М.О.Х.
