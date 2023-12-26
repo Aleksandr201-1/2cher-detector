@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from transformers import BertConfig, BertForSequenceClassification, BertTokenizer, pipeline
 import torch
+import datetime
 
 app = Flask(__name__)
 
@@ -47,10 +48,8 @@ def hello():
 @app.route('/check', methods=['GET'])
 def check():
     sentence = request.form.get('sentence')
-    #user_key = request.form.get('user_key')
-    print(f'testing {sentence}')
-    #print(classifier(sentence))
-    
+    user_id = request.form.get('user_id')
+    date = datetime.datetime.now()
     with torch.no_grad():
         inp = classifier.tokenizer(sentence, return_tensors = "pt", padding=True)
         inp = inp.to(device)
@@ -59,9 +58,12 @@ def check():
         res = sm(res)
         result_dict = {elm : float(res[num]) for num, elm in enumerate(LabtoNum.keys())}
         sorted_results = sorted(result_dict.items(), key = lambda x : x[1], reverse = True)
-        print(sorted_results[0:5])
+        str_date = str(date)
+        logs = {'user_id' : user_id, 'date' : str_date[11:], 'sentence' : sentence, 'probs' : sorted_results}
+        with open('logs/logs-' + str_date[0:10], 'a') as logfile:
+            logfile.write(str(logs) + '\n')
 
-        return jsonify({'probs' : sorted_results[0:5]})
+        return jsonify({'probs' : sorted_results})
 
 if __name__ == "__main__":
     app.run(debug=False, port = 8085)
